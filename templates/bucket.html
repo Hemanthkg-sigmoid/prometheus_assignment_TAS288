@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ bucket_name }} Content</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #e9ecef;
+            font-size: 14px;
+        }
+        .container {
+            margin-top: 30px;
+        }
+        .btn-upload {
+            background-color: #0056b3;
+            border: none;
+        }
+        .btn-upload:hover {
+            background-color: #0056b3;
+        }
+        .btn-folder {
+            background-color: #0056b3;
+            border: none;
+        }
+        .btn-folder:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger-custom {
+            background-color: #dc3545;
+            border: none;
+        
+            justify-content: center;    
+            align-items: center;
+             
+        }
+        .btn-danger-custom:hover {
+            background-color: #c82333;
+            
+            justify-content: center;    
+            align-items: center; 
+        }
+        .list-group-item {
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h3>Contents of {{ bucket_name }}</h3>
+
+        <form method="POST" action="/upload_file/{{ bucket_name }}" enctype="multipart/form-data" class="mb-3">
+            <div class="input-group">
+                <input type="file" name="file" class="form-control" required>
+                <button type="submit" class="btn btn-upload">Upload</button>
+            </div>
+        </form>
+
+        <form method="POST" action="/create_folder/{{ bucket_name }}" class="mb-3">
+            <div class="input-group">
+                <input type="text" name="folder_name" placeholder="New folder name" class="form-control" required>
+                <button type="submit" class="btn btn-folder">Create Folder</button>
+            </div>
+        </form>
+
+        <ul class="list-group">
+            {% for object in objects %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ object.Key }}
+                <div class="btn-group ms-2">
+                    {% if object.Key.endswith('/') %}
+                    <form method="POST"
+                        action="{{ url_for('delete_folder', bucket_name=bucket_name, folder_key=object.Key | urlencode) }}"
+                        onsubmit="return confirm('Delete this folder?');">
+                        <button type="submit" class="btn btn-danger-custom btn-sm">Delete</button>
+                    </form>
+                    {% else %}
+                    <form method="POST"
+                        action="{{ url_for('delete_file', bucket_name=bucket_name, file_key=object.Key | urlencode) }}"
+                        onsubmit="return confirm('Delete this file?');">
+                        <button type="submit" class="btn btn-danger-custom btn-sm">Delete</button>
+                    </form>
+                    {% endif %}
+                    
+                    <form method="POST" action="/move_file/{{ bucket_name }}/{{ object.Key }}/target_bucket" class="ms-2">
+                        <select name="target_bucket" class="form-select" required>
+                            <option value="" disabled selected>Move To</option>
+                            {% for bucket in buckets %}
+                            <option value="{{ bucket.Name }}">{{ bucket.Name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-warning btn-sm">Move</button>
+                    </form>
+
+                    <form method="POST" action="/copy_file/{{ bucket_name }}/{{ object.Key }}/target_bucket" class="ms-2">
+                        <select name="target_bucket" class="form-select" required>
+                            <option value="" disabled selected>Copy To</option>
+                            {% for bucket in buckets %}
+                            <option value="{{ bucket.Name }}">{{ bucket.Name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success btn-sm">Copy</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <a href="/" class="btn btn-secondary mt-3">Back</a>
+    </div>
+</body>
+
+</html>
